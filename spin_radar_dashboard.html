@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin ◇ Radar de Oportunidades</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #29ABE2;
+  --cyan-dark: #1a8ab8;
+  --cyan-light: #e6f6fc;
+  --navy: #0a1628;
+  --navy-mid: #132239;
+  --white: #ffffff;
+  --gray-50: #f8fafc;
+  --gray-100: #f0f4f8;
+  --gray-200: #e2e8f0;
+  --gray-400: #94a3b8;
+  --gray-600: #475569;
+  --gray-800: #1e293b;
+  --red: #dc2626;
+  --red-bg: #fef2f2;
+  --orange: #ea580c;
+  --orange-bg: #fff7ed;
+  --green: #16a34a;
+  --green-bg: #f0fdf4;
+  --slate: #64748b;
+  --slate-bg: #f8fafc;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(41,171,226,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(41,171,226,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,22,40,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(41,171,226,0.2);
+  padding: 0 32px;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-diamond {
+  width: 32px;
+  height: 32px;
+  background: var(--cyan);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: 0.5px;
+}
+.logo-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--cyan);
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.header-date {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--gray-400);
+}
+.btn-atualizar {
+  background: var(--cyan);
+  color: var(--white);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-atualizar:hover { background: var(--cyan-dark); transform: translateY(-1px); }
+.btn-atualizar.loading { opacity: 0.7; pointer-events: none; }
+
+/* ── MAIN LAYOUT ── */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+/* ── STATS BAR ── */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--navy-mid);
+  border: 1px solid rgba(41,171,226,0.15);
+  border-radius: 12px;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: rgba(41,171,226,0.4); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.stat-card.alta::before { background: var(--red); }
+.stat-card.media::before { background: var(--orange); }
+.stat-card.baixa::before { background: var(--slate); }
+.stat-card.total::before { background: var(--cyan); }
+.stat-number {
+  font-family: 'Space Mono', monospace;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-card.alta .stat-number { color: var(--red); }
+.stat-card.media .stat-number { color: var(--orange); }
+.stat-card.baixa .stat-number { color: var(--gray-400); }
+.stat-card.total .stat-number { color: var(--cyan); }
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gray-400);
+}
+.stat-sub {
+  font-size: 12px;
+  color: var(--gray-600);
+  margin-top: 4px;
+}
+
+/* ── RESUMO EXECUTIVO ── */
+.resumo-box {
+  background: linear-gradient(135deg, rgba(41,171,226,0.12), rgba(41,171,226,0.04));
+  border: 1px solid rgba(41,171,226,0.3);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.resumo-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.resumo-content { flex: 1; }
+.resumo-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+.resumo-text {
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+}
+
+/* ── FILTERS ── */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-right: 4px;
+}
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: var(--gray-400);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.filter-btn.active { background: var(--cyan); border-color: var(--cyan); color: var(--white); }
+.search-box {
+  margin-left: auto;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 7px 14px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  width: 220px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-box:focus { border-color: var(--cyan); }
+.search-box::placeholder { color: var(--gray-600); }
+
+/* ── SEÇÃO ── */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.section-alta .dot { background: var(--red); }
+.section-media .dot { background: var(--orange); }
+.section-baixa .dot { background: var(--slate); }
+.section-alta { color: var(--red); }
+.section-media { color: var(--orange); }
+.section-baixa { color: var(--slate); }
+
+/* ── CARDS ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.card {
+  background: var(--navy-mid);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(41,171,226,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.card-header {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.card-fonte {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.card-alta .card-fonte { color: var(--red); }
+.card-media .card-fonte { color: var(--orange); }
+.card-baixa .card-fonte { color: var(--slate); }
+.card-score {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+.card-alta .card-score { background: rgba(220,38,38,0.15); color: var(--red); }
+.card-media .card-score { background: rgba(234,88,12,0.15); color: var(--orange); }
+.card-baixa .card-score { background: rgba(100,116,139,0.15); color: var(--slate); }
+.card-body { padding: 16px; }
+.card-tipo {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 6px;
+}
+.card-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: var(--gray-400);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.tag.valor { color: var(--cyan); border-color: rgba(41,171,226,0.2); background: rgba(41,171,226,0.08); }
+.tag.uf { color: var(--gray-400); }
+.tag.data { color: var(--gray-400); }
+.card-resumo {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.card-acao {
+  background: rgba(22,163,74,0.1);
+  border: 1px solid rgba(22,163,74,0.2);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.card-acao-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+.card-acao-text {
+  font-size: 12px;
+  color: rgba(22,163,74,0.85);
+  line-height: 1.4;
+}
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--cyan);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+.card-link:hover { opacity: 0.75; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--gray-400);
+}
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 18px; color: var(--gray-600); margin-bottom: 8px; }
+.empty-state p { font-size: 14px; }
+
+/* ── LINKEDIN CHECKLIST ── */
+.linkedin-section {
+  background: var(--navy-mid);
+  border: 1px solid rgba(41,171,226,0.15);
+  border-radius: 12px;
+  padding: 28px;
+  margin-top: 40px;
+}
+.linkedin-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.linkedin-icon {
+  width: 36px; height: 36px;
+  background: #0077b5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.linkedin-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+}
+.linkedin-sub {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+.checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.check-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.check-item:hover { border-color: rgba(41,171,226,0.3); }
+.check-item.done { opacity: 0.5; }
+.check-item.done .check-text { text-decoration: line-through; }
+.check-box {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+.check-item.done .check-box { background: var(--cyan); border-color: var(--cyan); }
+.check-text { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.4; }
+.check-texto-bold { font-weight: 600; color: var(--white); display: block; margin-bottom: 2px; }
+
+/* ── LOADING OVERLAY ── */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,22,40,0.85);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  display: none;
+}
+.loading-overlay.show { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(41,171,226,0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--gray-400); }
+
+/* ── FONTE BADGES ── */
+.fonte-badge {
+  display: inline-block;
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+.fonte-pncp { background: rgba(220,38,38,0.15); color: #fc8181; }
+.fonte-aneel { background: rgba(234,88,12,0.15); color: #fdba74; }
+.fonte-canal { background: rgba(41,171,226,0.15); color: var(--cyan); }
+.fonte-epe { background: rgba(22,163,74,0.15); color: #86efac; }
+.fonte-ons { background: rgba(168,85,247,0.15); color: #c4b5fd; }
+
+@media (max-width: 768px) {
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .cards-grid { grid-template-columns: 1fr; }
+  .checklist { grid-template-columns: 1fr; }
+  .container { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Consultando fontes e analisando com IA...</div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-diamond"></div>
+      <div>
+        <div class="logo-text">SPIN</div>
+        <div class="logo-sub">Radar de Oportunidades</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="header-date" id="headerDate">—</div>
+      <button class="btn-atualizar" id="btnAtualizar" onclick="carregarDados()">
+        ↻ Atualizar
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-card alta">
+      <div class="stat-number" id="countAlta">—</div>
+      <div class="stat-label">Alta Prioridade</div>
+      <div class="stat-sub">Agir hoje</div>
+    </div>
+    <div class="stat-card media">
+      <div class="stat-number" id="countMedia">—</div>
+      <div class="stat-label">Média Prioridade</div>
+      <div class="stat-sub">Acompanhar</div>
+    </div>
+    <div class="stat-card baixa">
+      <div class="stat-number" id="countBaixa">—</div>
+      <div class="stat-label">Baixa Prioridade</div>
+      <div class="stat-sub">Para registro</div>
+    </div>
+    <div class="stat-card total">
+      <div class="stat-number" id="countTotal">—</div>
+      <div class="stat-label">Analisados pela IA</div>
+      <div class="stat-sub">Últimas 24h</div>
+    </div>
+  </div>
+
+  <!-- RESUMO EXECUTIVO -->
+  <div class="resumo-box" id="resumoBox" style="display:none">
+    <div class="resumo-icon">📡</div>
+    <div class="resumo-content">
+      <div class="resumo-label">Resumo Executivo do Dia</div>
+      <div class="resumo-text" id="resumoText">—</div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <span class="filter-label">Filtrar:</span>
+    <button class="filter-btn active" onclick="setFiltro('todos', this)">Todos</button>
+    <button class="filter-btn" onclick="setFiltro('ALTA', this)">🔴 Alta</button>
+    <button class="filter-btn" onclick="setFiltro('MÉDIA', this)">🟡 Média</button>
+    <button class="filter-btn" onclick="setFiltro('BAIXA', this)">⚪ Baixa</button>
+    <button class="filter-btn" onclick="setFiltro('PNCP', this)">Licitações</button>
+    <button class="filter-btn" onclick="setFiltro('ANEEL', this)">ANEEL</button>
+    <button class="filter-btn" onclick="setFiltro('Canal Energia', this)">Notícias</button>
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar por palavra-chave..." oninput="renderCards()">
+  </div>
+
+  <!-- CARDS CONTAINER -->
+  <div id="cardsContainer">
+    <div class="empty-state">
+      <div class="icon">🔍</div>
+      <h3>Aguardando dados</h3>
+      <p>Clique em "Atualizar" para buscar as oportunidades de hoje ou configure o n8n para envio automático diário.</p>
+    </div>
+  </div>
+
+  <!-- LINKEDIN CHECKLIST -->
+  <div class="linkedin-section">
+    <div class="linkedin-header">
+      <div class="linkedin-icon">in</div>
+      <div>
+        <div class="linkedin-title">Rotina LinkedIn — Inteligência Comercial Semanal</div>
+        <div class="linkedin-sub">Execute toda segunda-feira • 15 minutos • Marque ao concluir</div>
+      </div>
+    </div>
+    <div class="checklist" id="checklist">
+      <!-- Renderizado via JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// ESTADO
+// ============================================================
+let todosItens = [];
+let filtroAtivo = 'todos';
+
+const KEYWORDS_SPIN = [
+  'scada', 'adms', 'ems', 'oms', 'dms', 'automação de subestação',
+  'supervisão', 'telemetria', 'iec 61850', 'iec 60870', 'dnp3',
+  'smart grid', 'rede inteligente', 'automação', 'p&d aneel',
+  'software', 'sistema de gerenciamento', 'monitoramento', 'controle',
+  'distribuição', 'transmissão', 'geração', 'concessionária',
+  'distribuidora', 'cemig', 'copel', 'celpe', 'coelba', 'equatorial',
+  'enel', 'cpfl', 'eletrobras', 'cteep', 'isa energia', 'celesc',
+  'energisa', 'solar', 'eólico', 'renovável', 'subestação', 'flisr'
+];
+
+const CHECKLIST_ITEMS = [
+  { id: 'c1', titulo: 'Buscar mudanças de cargo', texto: 'Pesquisar "diretor" OR "gerente" no LinkedIn filtrado por: setor elétrico + distribuidoras/transmissoras alvo. Identificar novos executivos.' },
+  { id: 'c2', titulo: 'Seguir novos decisores', texto: 'Para cada novo executivo encontrado: seguir, salvar no CRM como "Novo Contato", agendar abordagem em 7 dias.' },
+  { id: 'c3', titulo: 'Verificar posts de clientes-alvo', texto: 'Abrir páginas de CEMIG, COPEL, Equatorial, CPFL, Enel. Curtir e comentar posts relevantes sobre digitalização/automação.' },
+  { id: 'c4', titulo: 'Acompanhar ABRADEE e CIGRÉ Brasil', texto: 'Verificar eventos anunciados, novas publicações e membros ativos. Identificar oportunidades de presença.' },
+  { id: 'c5', titulo: 'Publicar conteúdo Spin', texto: 'Post semanal de Rodrigo: 1 insight sobre SCADA/ADMS/automação de rede com dados reais de projeto (sem revelar cliente).' },
+  { id: 'c6', titulo: 'Responder comentários e mensagens', texto: 'Responder todos os comentários e DMs abertos. Não deixar lead sem resposta por mais de 48h.' },
+  { id: 'c7', titulo: 'Verificar vagas em concessionárias', texto: 'Buscar vagas de "engenheiro de automação" OR "especialista SCADA" nas distribuidoras-alvo. Indica investimento e expansão.' },
+  { id: 'c8', titulo: 'Registrar inteligência coletada', texto: 'Documentar no CRM: novos contatos, mudanças percebidas, projetos mencionados em posts, expansões anunciadas.' }
+];
+
+// ============================================================
+// CHECKLIST
+// ============================================================
+function renderChecklist() {
+  const saved = JSON.parse(localStorage.getItem('spin_checklist') || '{}');
+  const container = document.getElementById('checklist');
+  const semana = getSemanaStr();
+  container.innerHTML = CHECKLIST_ITEMS.map(item => {
+    const key = `${semana}_${item.id}`;
+    const done = saved[key] || false;
+    return `
+    <div class="check-item ${done ? 'done' : ''}" onclick="toggleCheck('${key}', this)">
+      <div class="check-box">${done ? '✓' : ''}</div>
+      <div class="check-text">
+        <span class="check-texto-bold">${item.titulo}</span>
+        ${item.texto}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCheck(key, el) {
+  const saved = JSON.parse(localStorage.getItem('spin_checklist') || '{}');
+  saved[key] = !saved[key];
+  localStorage.setItem('spin_checklist', JSON.stringify(saved));
+  el.classList.toggle('done');
+  const box = el.querySelector('.check-box');
+  box.textContent = saved[key] ? '✓' : '';
+}
+
+function getSemanaStr() {
+  const d = new Date();
+  const week = Math.ceil(d.getDate() / 7);
+  return `${d.getFullYear()}_${d.getMonth()}_w${week}`;
+}
+
+// ============================================================
+// FILTROS
+// ============================================================
+function setFiltro(filtro, btn) {
+  filtroAtivo = filtro;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+function getItemsFiltrados() {
+  const q = (document.getElementById('searchBox')?.value || '').toLowerCase();
+  return todosItens.filter(item => {
+    const matchFiltro = filtroAtivo === 'todos' || item.prioridade === filtroAtivo || item.fonte === filtroAtivo;
+    const matchSearch = !q ||
+      (item.titulo || '').toLowerCase().includes(q) ||
+      (item.resumo || '').toLowerCase().includes(q) ||
+      (item.orgao || '').toLowerCase().includes(q);
+    return matchFiltro && matchSearch;
+  });
+}
+
+// ============================================================
+// RENDER CARDS
+// ============================================================
+function renderCards() {
+  const items = getItemsFiltrados();
+  const container = document.getElementById('cardsContainer');
+
+  if (items.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h3>Nenhum item encontrado</h3>
+        <p>Tente ajustar os filtros ou a busca.</p>
+      </div>`;
+    return;
+  }
+
+  const alta = items.filter(i => i.prioridade === 'ALTA');
+  const media = items.filter(i => i.prioridade === 'MÉDIA' || i.prioridade === 'MEDIA');
+  const baixa = items.filter(i => i.prioridade === 'BAIXA');
+
+  let html = '';
+
+  if (alta.length > 0) {
+    html += `<div class="section-title section-alta"><div class="dot"></div>Alta Prioridade — Agir Hoje (${alta.length})</div>`;
+    html += `<div class="cards-grid">${alta.map(renderCard).join('')}</div>`;
+  }
+  if (media.length > 0) {
+    html += `<div class="section-title section-media" style="margin-top:8px"><div class="dot"></div>Média Prioridade — Acompanhar (${media.length})</div>`;
+    html += `<div class="cards-grid">${media.map(renderCard).join('')}</div>`;
+  }
+  if (baixa.length > 0) {
+    html += `<div class="section-title section-baixa" style="margin-top:8px"><div class="dot"></div>Baixa Prioridade (${baixa.length})</div>`;
+    html += `<div class="cards-grid">${baixa.map(renderCard).join('')}</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderCard(item) {
+  const classeCard = {
+    'ALTA': 'card-alta',
+    'MÉDIA': 'card-media',
+    'MEDIA': 'card-media',
+    'BAIXA': 'card-baixa'
+  }[item.prioridade] || 'card-baixa';
+
+  const classeFonte = {
+    'PNCP': 'fonte-pncp',
+    'ANEEL': 'fonte-aneel',
+    'Canal Energia': 'fonte-canal',
+    'EPE': 'fonte-epe',
+    'ONS': 'fonte-ons'
+  }[item.fonte] || 'fonte-canal';
+
+  const tags = [];
+  if (item.valor && item.valor !== 'Não informado') tags.push(`<span class="tag valor">💰 ${item.valor}</span>`);
+  if (item.uf && item.uf !== 'Brasil') tags.push(`<span class="tag uf">📍 ${item.uf}</span>`);
+  if (item.dataEncerramento) tags.push(`<span class="tag data">⏱ Encerra: ${item.dataEncerramento}</span>`);
+  if (item.modalidade) tags.push(`<span class="tag">${item.modalidade}</span>`);
+
+  return `
+  <div class="card ${classeCard}">
+    <div class="card-header">
+      <div>
+        <span class="fonte-badge ${classeFonte}">${item.fonte}</span>
+        <span class="card-fonte">${item.prioridade}</span>
+      </div>
+      <div class="card-score">score ${item.score}/10</div>
+    </div>
+    <div class="card-body">
+      <div class="card-tipo">${item.tipo || ''}</div>
+      <div class="card-titulo">${item.titulo}</div>
+      ${tags.length > 0 ? `<div class="card-meta">${tags.join('')}</div>` : ''}
+      <div class="card-resumo">${item.resumo || ''}</div>
+      ${item.acaoRecomendada ? `
+      <div class="card-acao">
+        <div class="card-acao-label">Ação recomendada</div>
+        <div class="card-acao-text">${item.acaoRecomendada}</div>
+      </div>` : ''}
+      ${item.link ? `<a href="${item.link}" target="_blank" class="card-link">→ Ver detalhes</a>` : ''}
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// CARREGAR DADOS VIA API CLAUDE (com busca web)
+// ============================================================
+const JSONBIN_ID  = '69ec3a3e856a6821896de493';
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`;
+
+async function carregarDados() {
+  const overlay = document.getElementById('loadingOverlay');
+  const btn = document.getElementById('btnAtualizar');
+  overlay.classList.add('show');
+  btn.classList.add('loading');
+  btn.textContent = '↻ Carregando...';
+
+  try {
+    const response = await fetch(JSONBIN_URL, {
+      headers: { 'X-Bin-Meta': 'false' }
+    });
+
+    if (!response.ok) throw new Error(`JSONBin HTTP ${response.status}`);
+
+    const analise = await response.json();
+
+    todosItens = (analise.itens || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    const alta  = todosItens.filter(i => i.prioridade === 'ALTA').length;
+    const media = todosItens.filter(i => i.prioridade === 'MÉDIA' || i.prioridade === 'MEDIA').length;
+    const baixa = todosItens.filter(i => i.prioridade === 'BAIXA').length;
+
+    document.getElementById('countAlta').textContent  = alta;
+    document.getElementById('countMedia').textContent = media;
+    document.getElementById('countBaixa').textContent = baixa;
+    document.getElementById('countTotal').textContent = analise.totalAnalisados || todosItens.length;
+
+    document.getElementById('resumoText').textContent = analise.resumoExecutivo || '';
+    document.getElementById('resumoBox').style.display = 'flex';
+
+    // Mostra data da última atualização pelo n8n
+    const dataAtu = analise.dataAtualizacao
+      ? new Date(analise.dataAtualizacao).toLocaleDateString('pt-BR', {
+          weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo'
+        })
+      : new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+    document.getElementById('headerDate').textContent = `Atualizado: ${dataAtu}`;
+
+    // Cache local por 1h
+    localStorage.setItem('spin_radar_cache', JSON.stringify({ analise, timestamp: Date.now() }));
+
+    renderCards();
+
+  } catch (err) {
+    console.error('Erro ao buscar JSONBin:', err);
+    const cache = localStorage.getItem('spin_radar_cache');
+    if (cache) {
+      const { analise } = JSON.parse(cache);
+      todosItens = (analise.itens || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+      renderCards();
+      document.getElementById('resumoText').textContent = '(cache local) ' + (analise.resumoExecutivo || '');
+      document.getElementById('resumoBox').style.display = 'flex';
+    } else {
+      document.getElementById('cardsContainer').innerHTML = `
+        <div class="empty-state">
+          <div class="icon">⚠️</div>
+          <h3>Aguardando primeira execução do n8n</h3>
+          <p>O workflow ainda não salvou dados. Execute o workflow Radar Spin no n8n para popular o dashboard.</p>
+        </div>`;
+    }
+  } finally {
+    overlay.classList.remove('show');
+    btn.classList.remove('loading');
+    btn.textContent = '↻ Atualizar';
+  }
+}
+
+// Auto-refresh a cada 30 minutos
+setInterval(carregarDados, 30 * 60 * 1000);
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderChecklist();
+
+  // Atualiza data no header
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('pt-BR', {
+    weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'
+  });
+
+  // Carrega cache se existir e for recente (< 4h)
+  const cache = localStorage.getItem('spin_radar_cache');
+  if (cache) {
+    const { analise, timestamp } = JSON.parse(cache);
+    if (Date.now() - timestamp < 4 * 60 * 60 * 1000) {
+      todosItens = (analise.itens || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+      const alta = todosItens.filter(i => i.prioridade === 'ALTA').length;
+      const media = todosItens.filter(i => i.prioridade === 'MÉDIA' || i.prioridade === 'MEDIA').length;
+      const baixa = todosItens.filter(i => i.prioridade === 'BAIXA').length;
+      document.getElementById('countAlta').textContent = alta;
+      document.getElementById('countMedia').textContent = media;
+      document.getElementById('countBaixa').textContent = baixa;
+      document.getElementById('countTotal').textContent = analise.totalAnalisados || todosItens.length;
+      document.getElementById('resumoText').textContent = analise.resumoExecutivo || '';
+      document.getElementById('resumoBox').style.display = 'flex';
+      renderCards();
+      return;
+    }
+  }
+
+  // Carrega automaticamente na abertura
+  carregarDados();
+});
+</script>
+</body>
+</html>
