@@ -567,8 +567,8 @@ body::before {
     </div>
     <div class="stat-card baixa">
       <div class="stat-number" id="countBaixa">—</div>
-      <div class="stat-label">Baixa Prioridade</div>
-      <div class="stat-sub">Para registro</div>
+      <div class="stat-label">Seções Ativas</div>
+      <div class="stat-sub">Com conteúdo hoje</div>
     </div>
     <div class="stat-card total">
       <div class="stat-number" id="countTotal">—</div>
@@ -590,12 +590,12 @@ body::before {
   <div class="filters">
     <span class="filter-label">Filtrar:</span>
     <button class="filter-btn active" onclick="setFiltro('todos', this)">Todos</button>
-    <button class="filter-btn" onclick="setFiltro('ALTA', this)">🔴 Alta</button>
-    <button class="filter-btn" onclick="setFiltro('MÉDIA', this)">🟡 Média</button>
-    <button class="filter-btn" onclick="setFiltro('BAIXA', this)">⚪ Baixa</button>
-    <button class="filter-btn" onclick="setFiltro('PNCP', this)">Licitações</button>
-    <button class="filter-btn" onclick="setFiltro('ANEEL', this)">ANEEL</button>
-    <button class="filter-btn" onclick="setFiltro('Canal Energia', this)">Notícias</button>
+    <button class="filter-btn" onclick="setFiltro('LICITACOES', this)">🔴 Licitações</button>
+    <button class="filter-btn" onclick="setFiltro('MERCADO', this)">🟡 Mercado</button>
+    <button class="filter-btn" onclick="setFiltro('REGULATORIO', this)">🔵 Regulatório</button>
+    <button class="filter-btn" onclick="setFiltro('PD', this)">🟢 P&D</button>
+    <button class="filter-btn" onclick="setFiltro('AGENDA', this)">📅 Agenda</button>
+    <button class="filter-btn" onclick="setFiltro('ALTA', this)">⚡ Só Alta</button>
     <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar por palavra-chave..." oninput="renderCards()">
   </div>
 
@@ -702,7 +702,10 @@ function setFiltro(filtro, btn) {
 function getItemsFiltrados() {
   const q = (document.getElementById('searchBox')?.value || '').toLowerCase();
   return todosItens.filter(item => {
-    const matchFiltro = filtroAtivo === 'todos' || item.prioridade === filtroAtivo || item.fonte === filtroAtivo;
+    let matchFiltro;
+    if (filtroAtivo === 'todos') matchFiltro = true;
+    else if (filtroAtivo === 'ALTA') matchFiltro = item.prioridade === 'ALTA';
+    else matchFiltro = (item.secao || 'MERCADO') === filtroAtivo;
     const matchSearch = !q ||
       (item.titulo || '').toLowerCase().includes(q) ||
       (item.resumo || '').toLowerCase().includes(q) ||
@@ -714,6 +717,14 @@ function getItemsFiltrados() {
 // ============================================================
 // RENDER CARDS
 // ============================================================
+const SECOES_CONFIG = {
+  LICITACOES:  { label: '🔴 Licitações e Editais',     cor: '#c62828', classe: 'section-alta' },
+  MERCADO:     { label: '🟡 Movimentações de Mercado', cor: '#e65100', classe: 'section-media' },
+  REGULATORIO: { label: '🔵 Regulatório e Política',   cor: '#1565c0', classe: 'section-reg' },
+  PD:          { label: '🟢 P&D e Inovação',           cor: '#2e7d32', classe: 'section-pd' },
+  AGENDA:      { label: '📅 Agenda e Eventos',         cor: '#6a1b9a', classe: 'section-agenda' }
+};
+
 function renderCards() {
   const items = getItemsFiltrados();
   const container = document.getElementById('cardsContainer');
@@ -728,23 +739,26 @@ function renderCards() {
     return;
   }
 
-  const alta = items.filter(i => i.prioridade === 'ALTA');
-  const media = items.filter(i => i.prioridade === 'MÉDIA' || i.prioridade === 'MEDIA');
-  const baixa = items.filter(i => i.prioridade === 'BAIXA');
+  // Agrupa por seção
+  const porSecao = {};
+  for (const key of Object.keys(SECOES_CONFIG)) porSecao[key] = [];
+  for (const item of items) {
+    const s = item.secao || 'MERCADO';
+    if (porSecao[s]) porSecao[s].push(item);
+    else porSecao.MERCADO.push(item);
+  }
 
   let html = '';
+  let secoesAtivas = 0;
 
-  if (alta.length > 0) {
-    html += `<div class="section-title section-alta"><div class="dot"></div>Alta Prioridade — Agir Hoje (${alta.length})</div>`;
-    html += `<div class="cards-grid">${alta.map(renderCard).join('')}</div>`;
-  }
-  if (media.length > 0) {
-    html += `<div class="section-title section-media" style="margin-top:8px"><div class="dot"></div>Média Prioridade — Acompanhar (${media.length})</div>`;
-    html += `<div class="cards-grid">${media.map(renderCard).join('')}</div>`;
-  }
-  if (baixa.length > 0) {
-    html += `<div class="section-title section-baixa" style="margin-top:8px"><div class="dot"></div>Baixa Prioridade (${baixa.length})</div>`;
-    html += `<div class="cards-grid">${baixa.map(renderCard).join('')}</div>`;
+  for (const [key, cfg] of Object.entries(SECOES_CONFIG)) {
+    const secItens = porSecao[key];
+    if (!secItens.length) continue;
+    secoesAtivas++;
+    // Alta prioridade primeiro dentro de cada seção
+    const ordenados = [...secItens.filter(i => i.prioridade === 'ALTA'), ...secItens.filter(i => i.prioridade !== 'ALTA')];
+    html += `<div class="section-title" style="color:${cfg.cor};margin-top:${secoesAtivas > 1 ? '24px' : '0'}"><div class="dot" style="background:${cfg.cor}"></div>${cfg.label} (${secItens.length})</div>`;
+    html += `<div class="cards-grid">${ordenados.map(renderCard).join('')}</div>`;
   }
 
   container.innerHTML = html;
@@ -826,7 +840,8 @@ async function carregarDados() {
 
     document.getElementById('countAlta').textContent  = alta;
     document.getElementById('countMedia').textContent = media;
-    document.getElementById('countBaixa').textContent = baixa;
+    const secoesAtivas = new Set(todosItens.map(i => i.secao || 'MERCADO')).size;
+    document.getElementById('countBaixa').textContent = secoesAtivas;
     document.getElementById('countTotal').textContent = analise.totalAnalisados || todosItens.length;
 
     document.getElementById('resumoText').textContent = analise.resumoExecutivo || '';
@@ -895,7 +910,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const baixa = todosItens.filter(i => i.prioridade === 'BAIXA').length;
       document.getElementById('countAlta').textContent = alta;
       document.getElementById('countMedia').textContent = media;
-      document.getElementById('countBaixa').textContent = baixa;
+      const secoesAtivas = new Set(todosItens.map(i => i.secao || 'MERCADO')).size;
+    document.getElementById('countBaixa').textContent = secoesAtivas;
       document.getElementById('countTotal').textContent = analise.totalAnalisados || todosItens.length;
       document.getElementById('resumoText').textContent = analise.resumoExecutivo || '';
       document.getElementById('resumoBox').style.display = 'flex';
